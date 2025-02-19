@@ -1,5 +1,4 @@
 #include <Eigen/Dense>
-#include <pinocchio/parsers/urdf.hpp>
 #include <pinocchio/multibody/data.hpp>
 #include "pinocchio/algorithm/model.hpp"
 #include <pinocchio/algorithm/compute-all-terms.hpp>
