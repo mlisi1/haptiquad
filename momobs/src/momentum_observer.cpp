@@ -1,7 +1,7 @@
-#include <momobs/residual_estimator.hpp>
+#include <momobs/momentum_observer.hpp>
 
 
-bool momobs::ResidualEstimator::setInteralGain(float k_int) {
+bool momobs::MomentumObserver::setInteralGain(float k_int) {
 
     //Throw error
     if (!initialized) { return false; }
@@ -13,7 +13,7 @@ bool momobs::ResidualEstimator::setInteralGain(float k_int) {
 
 
 
-bool momobs::ResidualEstimator::setExternalGain(float k_ext) {
+bool momobs::MomentumObserver::setExternalGain(float k_ext) {
 
     //Throw error
     if (!initialized) { return false; }
@@ -25,7 +25,7 @@ bool momobs::ResidualEstimator::setExternalGain(float k_ext) {
 
 
 
-void momobs::ResidualEstimator::initModel(pinocchio::Model pin_model) {
+void momobs::MomentumObserver::initModel(pinocchio::Model pin_model) {
 
     model = pin_model;
     data = pinocchio::Data(model);
@@ -63,7 +63,7 @@ void momobs::ResidualEstimator::initModel(pinocchio::Model pin_model) {
 
 
 
-bool momobs::ResidualEstimator::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
+bool momobs::MomentumObserver::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
 
     if (!initialized) { return false; }
 
@@ -91,7 +91,7 @@ bool momobs::ResidualEstimator::updateJointStates(JointStateDict q, JointStateDi
 
 
 
-bool momobs::ResidualEstimator::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
+bool momobs::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
 
     if (!initialized) { return false; }
 
@@ -109,7 +109,7 @@ bool momobs::ResidualEstimator::updateBaseState(Eigen::VectorXd v0, Eigen::Quate
 }
 
 
-std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::ResidualEstimator::getResiduals(double dt) {
+std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResiduals(double dt) {
 
     if (!initialized) {
         return std::make_tuple(Eigen::VectorXd::Zero(1), Eigen::VectorXd::Zero(1));
@@ -160,11 +160,11 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::ResidualEstimator::getResid
 }
 
 
-void momobs::ResidualEstimator::disableTimeScaling() {
+void momobs::MomentumObserver::disableTimeScaling() {
     rescale = false;
 }
 
-void momobs::ResidualEstimator::enableTimeScaling(double expected_dt, double threshold) {
+void momobs::MomentumObserver::enableTimeScaling(double expected_dt, double threshold) {
 
     rescale = true;
     expected_dt_ = expected_dt;

@@ -24,7 +24,9 @@ endforeach()
 
 
 add_library(${PROJECT_NAME} SHARED
-  src/residual_estimator.cpp
+  src/momentum_observer.cpp
+  src/spatial_momentum_observer.cpp
+  src/force_estimator.cpp
 )
 
 

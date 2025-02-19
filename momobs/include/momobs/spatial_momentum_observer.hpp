@@ -1,26 +1,21 @@
 #include <Eigen/Dense>
-#include <pinocchio/parsers/urdf.hpp>
-#include <pinocchio/multibody/data.hpp>
-#include "pinocchio/algorithm/model.hpp"
-#include <pinocchio/algorithm/compute-all-terms.hpp>
-#include "pinocchio/algorithm/joint-configuration.hpp"
-#include <pinocchio/algorithm/jacobian.hpp>
-#include <pinocchio/algorithm/frames.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
-// #include <pinocchio/algorithm/crba.hpp>
+
+#include <pinocchio_spatial_lib/floating_model.hpp>
+#include <pinocchio_spatial_lib/floating_dynamics.hpp>
+#include <pinocchio_spatial_lib/spatial.hpp>
 
 #include <vector>
 
 using JointStateDict = std::map<std::string, double>;
 
 
-namespace momobs {
+namespace spatial::momobs {
 
-class ResidualEstimator {
+class MomentumObserver {
 
     public:
 
-        ResidualEstimator();
+        MomentumObserver();
 
         void initModel(pinocchio::Model pin_model);
 
@@ -44,10 +39,10 @@ class ResidualEstimator {
         float k_int, k_ext = 1.0;
 
 
-        pinocchio::Model model;
-        pinocchio::Data data;
+        model::SpatialFloatingModel model;
 
         Eigen::VectorXd q_, q_dot_, torques_;
+
         Eigen::VectorXd integral_int, integral_ext, r_int, r_ext;
 
         Eigen::MatrixXd K_int, K_ext;
