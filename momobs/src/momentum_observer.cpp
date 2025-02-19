@@ -1,25 +1,26 @@
 #include <momobs/momentum_observer.hpp>
 
 
-bool momobs::MomentumObserver::setInteralGain(float k_int) {
+void momobs::MomentumObserver::setInteralGain(float k_int) {
 
     //Throw error
-    if (!initialized) { return false; }
+    if (!initialized) {
+        throw std::runtime_error("Error - MomentumObserver has not been initialized yet.");
+    }
 
     K_int = Eigen::MatrixXd::Identity(model.nv-6, model.nv-6) * k_int;
-    return true;
 
 }
 
 
 
-bool momobs::MomentumObserver::setExternalGain(float k_ext) {
+void momobs::MomentumObserver::setExternalGain(float k_ext) {
 
-    //Throw error
-    if (!initialized) { return false; }
+    if (!initialized) {
+        throw std::runtime_error("Error - MomentumObserver has not been initialized yet.");
+    }
 
     K_ext = Eigen::MatrixXd::Identity(6, 6) * k_ext;
-    return true;
 
 }
 
@@ -63,15 +64,17 @@ void momobs::MomentumObserver::initModel(pinocchio::Model pin_model) {
 
 
 
-bool momobs::MomentumObserver::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
+void momobs::MomentumObserver::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
 
-    if (!initialized) { return false; }
+    if (!initialized) {
+        throw std::runtime_error("Error - MomentumObserver has not been initialized yet.");
+    }
 
     if (q.size() != static_cast<size_t>(model.nv-6) || 
         q_dot.size() != static_cast<size_t>(model.nv-6) || 
         torques.size() != static_cast<size_t>(model.nv-6)) 
     {
-        return false;
+        throw std::runtime_error("Error - updateJointStates(): arguments size does not match model size.");
     }
 
     //TODO: Check for matching names in the map
@@ -84,18 +87,20 @@ bool momobs::MomentumObserver::updateJointStates(JointStateDict q, JointStateDic
 
     }
 
-    return true;
-
 }
 
 
 
 
-bool momobs::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
+void momobs::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
 
-    if (!initialized) { return false; }
+    if (!initialized) {
+        throw std::runtime_error("Error - MomentumObserver has not been initialized yet.");
+    }
 
-    if (v0.size() != 6) { return false; }
+    if (v0.size() != 6) {
+        throw std::runtime_error("Error - updateBaseState(): v0 is expected to be a spatial velocity with dimension 6");
+    }
 
     q_(3) = orientation.x();
     q_(4) = orientation.y();
@@ -104,15 +109,13 @@ bool momobs::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quater
 
     q_dot_.head<6>() << v0;
 
-    return true;
-
 }
 
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResiduals(double dt) {
 
     if (!initialized) {
-        return std::make_tuple(Eigen::VectorXd::Zero(1), Eigen::VectorXd::Zero(1));
+        throw std::runtime_error("Error - MomentumObserver has not been initialized yet.");
     }
 
     //TODO: lighten computating functions

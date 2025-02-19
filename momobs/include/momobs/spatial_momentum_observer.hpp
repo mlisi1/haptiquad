@@ -5,6 +5,7 @@
 #include <pinocchio_spatial_lib/spatial.hpp>
 
 #include <vector>
+#include <stdexcept> 
 
 using JointStateDict = std::map<std::string, double>;
 
@@ -19,11 +20,11 @@ class MomentumObserver {
 
         void initModel(pinocchio::Model pin_model);
 
-        bool setInteralGain(float k_int);
-        bool setExternalGain(float k_ext);
+        void setInteralGain(float k_int);
+        void setExternalGain(float k_ext);
 
-        bool updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques);
-        bool updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation);
+        void updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques);
+        void updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation);
 
         void enableTimeScaling(double expected_dt, double threshold);
         void disableTimeScaling();
