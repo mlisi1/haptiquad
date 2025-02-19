@@ -1,0 +1,173 @@
+#include <momobs/residual_estimator.hpp>
+
+
+bool momobs::ResidualEstimator::setInteralGain(float k_int) {
+
+    //Throw error
+    if (!initialized) { return false; }
+
+    K_int = Eigen::MatrixXd::Identity(model.nv-6, model.nv-6) * k_int;
+    return true;
+
+}
+
+
+
+bool momobs::ResidualEstimator::setExternalGain(float k_ext) {
+
+    //Throw error
+    if (!initialized) { return false; }
+
+    K_ext = Eigen::MatrixXd::Identity(6, 6) * k_ext;
+    return true;
+
+}
+
+
+
+void momobs::ResidualEstimator::initModel(pinocchio::Model pin_model) {
+
+    model = pin_model;
+    data = pinocchio::Data(model);
+
+
+    q_ = Eigen::VectorXd::Zero(model.nq);
+    q_dot_ = Eigen::VectorXd::Zero(model.nv);
+    torques_ = Eigen::VectorXd::Zero(model.nv-6);
+
+    integral_int = Eigen::VectorXd::Zero(model.nv-6);
+    r_int = Eigen::VectorXd::Zero(model.nv -6);
+        
+    integral_ext = Eigen::VectorXd::Zero(6);
+    r_ext = Eigen::VectorXd::Zero(6);
+
+    K_int = Eigen::MatrixXd::Identity(model.nv-6, model.nv-6) * k_int;
+    K_ext = Eigen::MatrixXd::Identity(6, 6) * k_ext;
+
+    H = Eigen::MatrixXd::Zero(model.nv-6, model.nv-6);
+    H_dot = Eigen::MatrixXd::Zero(model.nv-6, model.nv-6);
+    F = Eigen::MatrixXd::Zero(6, model.nv-6);
+    F_dot = Eigen::MatrixXd::Zero(6, model.nv-6);
+    IC = Eigen::MatrixXd::Zero(6,6);
+    IC_dot = Eigen::MatrixXd::Zero(6,6);
+    H_fb = Eigen::MatrixXd::Zero(model.nv-6, model.nv-6);
+    H_dot_fb = Eigen::MatrixXd::Zero(model.nv-6, model.nv-6);
+
+    C = Eigen::VectorXd::Zero(model.nv-6);
+    p0c = Eigen::VectorXd::Zero(6);
+    C_fb = Eigen::VectorXd::Zero(model.nv-6);
+
+    initialized = true;
+
+}
+
+
+
+bool momobs::ResidualEstimator::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
+
+    if (!initialized) { return false; }
+
+    if (q.size() != static_cast<size_t>(model.nv-6) || 
+        q_dot.size() != static_cast<size_t>(model.nv-6) || 
+        torques.size() != static_cast<size_t>(model.nv-6)) 
+    {
+        return false;
+    }
+
+    //TODO: Check for matching names in the map
+
+    for (int i=0; i<q.size(); i++) {
+
+        q_(i+7) = q[model.names[i+2]];
+        q_dot_(i+6) = q_dot[model.names[i+2]];
+        torques_(i) = torques[model.names[i+2]];
+
+    }
+
+    return true;
+
+}
+
+
+
+
+bool momobs::ResidualEstimator::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
+
+    if (!initialized) { return false; }
+
+    if (v0.size() != 6) { return false; }
+
+    q_(3) = orientation.x();
+    q_(4) = orientation.y();
+    q_(5) = orientation.z();
+    q_(6) = orientation.w();
+
+    q_dot_.head<6>() << v0;
+
+    return true;
+
+}
+
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::ResidualEstimator::getResiduals(double dt) {
+
+    if (!initialized) {
+        return std::make_tuple(Eigen::VectorXd::Zero(1), Eigen::VectorXd::Zero(1));
+    }
+
+    //TODO: lighten computating functions
+    pinocchio::computeAllTerms(model, data, q_, q_dot_);
+    pinocchio::computeCoriolisMatrix(model, data, q_, q_dot_);
+
+    data.M.triangularView<Eigen::StrictlyLower>() = data.M.transpose().triangularView<Eigen::StrictlyLower>();
+
+    pin_H_dot = data.C + data.C.transpose();
+
+    IC = data.M.block(0,0, 6, 6);
+    F = data.M.block(0,6, 6, model.nv-6);
+    H = data.M.block(6,6, model.nv-6, model.nv-6);
+
+    C = data.nle.tail(model.nv-6);
+    p0c = data.nle.head<6>();
+
+    H_dot = pin_H_dot.block(6, 6, model.nv-6, model.nv-6);
+    F_dot = pin_H_dot.block(0, 6, 6, model.nv-6);
+    IC_dot = pin_H_dot.block(0, 0, 6, 6);
+
+    C_fb = C - F.transpose() * IC.inverse() * p0c;
+    H_fb = H - F.transpose() * IC.inverse() * F;
+    H_dot_fb = H_dot - F_dot.transpose() * IC.inverse() * F - F.transpose() * IC.inverse() * F_dot
+                            - F.transpose() * (-IC.inverse() * IC_dot * IC.inverse()) * F;
+
+
+    //TODO: Add friction model
+    if (dt > threshold_) {
+        scale_factor = expected_dt_ / dt;
+    }
+
+    if (!rescale) { scale_factor = 1.0; }
+
+
+    integral_int += (torques_ + H_dot_fb * q_dot_.tail(model.nv-6) - C_fb + r_int) * dt * scale_factor;
+    integral_ext += (IC_dot * q_dot_.head<6>() + F_dot * q_dot_.tail(model.nv - 6) - p0c + r_ext) * dt * scale_factor;
+
+    r_int = K_int * (H_fb * q_dot_.tail(model.nv - 6) - integral_int); 
+    r_ext = K_ext * (IC * q_dot_.head<6>() + F * q_dot_.tail(model.nv-6) - integral_ext);
+
+
+    return std::make_tuple(r_int, r_ext);
+
+}
+
+
+void momobs::ResidualEstimator::disableTimeScaling() {
+    rescale = false;
+}
+
+void momobs::ResidualEstimator::enableTimeScaling(double expected_dt, double threshold) {
+
+    rescale = true;
+    expected_dt_ = expected_dt;
+    threshold_ = threshold;
+
+}
