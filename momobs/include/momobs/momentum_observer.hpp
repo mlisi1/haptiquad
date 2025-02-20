@@ -31,6 +31,8 @@ class MomentumObserver {
         void enableTimeScaling(double expected_dt, double threshold);
         void disableTimeScaling();
 
+        Eigen::VectorXd subtractFrictionTorque(Eigen::VectorXd torques);
+
         std::tuple<Eigen::VectorXd, Eigen::VectorXd> getResiduals(double dt);
 
 

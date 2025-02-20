@@ -1,5 +1,6 @@
 #include <momobs/momentum_observer.hpp>
 
+momobs::MomentumObserver::MomentumObserver() {}
 
 void momobs::MomentumObserver::setInteralGain(float k_int) {
 
@@ -142,8 +143,8 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResidu
     H_dot_fb = H_dot - F_dot.transpose() * IC.inverse() * F - F.transpose() * IC.inverse() * F_dot
                             - F.transpose() * (-IC.inverse() * IC_dot * IC.inverse()) * F;
 
+    torques_ = subtractFrictionTorque(torques_);
 
-    //TODO: Add friction model
     if (dt > threshold_) {
         scale_factor = expected_dt_ / dt;
     }
@@ -173,4 +174,12 @@ void momobs::MomentumObserver::enableTimeScaling(double expected_dt, double thre
     expected_dt_ = expected_dt;
     threshold_ = threshold;
 
+}
+
+
+Eigen::VectorXd momobs::MomentumObserver::subtractFrictionTorque(Eigen::VectorXd torques) {
+
+    //TODO: implement friction model
+    
+    return torques;
 }

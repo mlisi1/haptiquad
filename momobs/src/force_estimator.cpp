@@ -1,5 +1,7 @@
 #include <momobs/force_estimator.hpp>
 
+momobs::ForceEstimator::ForceEstimator() {}
+
 void momobs::ForceEstimator::initModel(pinocchio::Model pin_model) {
 
     model = pin_model;
