@@ -19,7 +19,7 @@ void momobs::ForceEstimator::initModel(pinocchio::Model pin_model) {
 void momobs::ForceEstimator::setNumContacts(int num_contacts) {
     
     if (!initialized) {
-        throw std::runtime_error("Error - ForceEstimator has not been initialized yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - ForceEstimator has not been initialized yet.");
     }
 
     num_contacts_ = num_contacts;
@@ -37,7 +37,7 @@ void momobs::ForceEstimator::setNumContacts(int num_contacts) {
 void momobs::ForceEstimator::findFeetFrames(std::vector<std::string> joint_names) {
 
     if (num_contacts_ == 0) {
-        throw std::runtime_error("Error - number of contacts has not been set yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
 
     std::unordered_set<std::string> seen;
@@ -54,7 +54,8 @@ void momobs::ForceEstimator::findFeetFrames(std::vector<std::string> joint_names
     }
 
     if (feet_frames_.size() != num_contacts_) {
-        throw std::runtime_error("Error - findFeetFrames(): feet frames size and number of contacts do not match");
+        throw std::runtime_error("[ForceEstimator]: Error - findFeetFrames(): feet frames size and number of contacts do not match (" + 
+            std::to_string(feet_frames_.size()) + ", " + std::to_string(num_contacts_) + ")" );
     }
 
 }
@@ -63,12 +64,13 @@ void momobs::ForceEstimator::findFeetFrames(std::vector<std::string> joint_names
 void momobs::ForceEstimator::setFeetFrames(std::vector<std::string> feet_frames) {
 
     if (num_contacts_ == 0) {
-        throw std::runtime_error("Error - number of contacts has not been set yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
     feet_frames_ = feet_frames;
 
     if (feet_frames_.size() != num_contacts_) {
-        throw std::runtime_error("Error - setFeetFrames(): feet frames size and number of contacts do not match");
+        throw std::runtime_error("[ForceEstimator]: Error - findFeetFrames(): feet frames size and number of contacts do not match (" + 
+            std::to_string(feet_frames_.size()) + ", " + std::to_string(num_contacts_) + ")" );
     }
 
 }
@@ -78,15 +80,15 @@ void momobs::ForceEstimator::setFeetFrames(std::vector<std::string> feet_frames)
 void momobs::ForceEstimator::setFeetOnGround(std::map<std::string, bool> is_on_ground) {
 
     if (num_contacts_ == 0) {
-        throw std::runtime_error("Error - number of contacts has not been set yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
 
     if (feet_frames_.size() == 0) {
-        throw std::runtime_error("Error - setFeetOnGround(): feet frames has not been specified yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - setFeetOnGround(): feet frames has not been specified yet.");
     }
 
     if (feet_frames_.size() != is_on_ground.size()) {
-        throw std::runtime_error("Error - setFeetOnGround(): argument size and feet frames size do not match.");
+        throw std::runtime_error("[ForceEstimator]: Error - setFeetOnGround(): argument size and feet frames size do not match.");
     }
 
     is_on_ground_.resize(num_contacts_);
@@ -104,23 +106,23 @@ void momobs::ForceEstimator::setFeetOnGround(std::map<std::string, bool> is_on_g
 void momobs::ForceEstimator::updateJacobians(JointStateDict q, Eigen::MatrixXd F, Eigen::MatrixXd IC) {
 
     if (!initialized) {
-        throw std::runtime_error("Error - ForceEstimator has not been initialized yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - ForceEstimator has not been initialized yet.");
     }
 
     if (q.size() != model.nv-6) {
-        throw std::runtime_error("Error - updateJacobians(): argument dimension(s) (q) does not match model's.");
+        throw std::runtime_error("[ForceEstimator]: Error - updateJacobians(): argument dimension(s) (q) does not match model's.");
     }
 
     if (num_contacts_ == 0) {
-        throw std::runtime_error("Error - number of contacts has not been set yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
 
     if (F.rows() != 6 || F.cols() != model.nv-6) {
-        throw std::runtime_error("Error - updateJacobians(): argument dimension(s) (F) does not match model's.");
+        throw std::runtime_error("[ForceEstimator]: Error - updateJacobians(): argument dimension(s) (F) does not match model's.");
     }
 
     if (IC.rows() != 6 || IC.cols() != 6) {
-        throw std::runtime_error("Error - updateJacobians(): argument dimension(s) (IC) are wrong.");
+        throw std::runtime_error("[ForceEstimator]: Error - updateJacobians(): argument dimension(s) (IC) are wrong.");
     }
 
 
@@ -155,15 +157,15 @@ void momobs::ForceEstimator::updateJacobians(JointStateDict q, Eigen::MatrixXd F
 std::vector<Eigen::VectorXd> momobs::ForceEstimator::calculateForces(Eigen::VectorXd r_int, Eigen::VectorXd r_ext, Eigen::Quaterniond orientation) {
 
     if (!initialized) {
-        throw std::runtime_error("Error - ForceEstimator has not been initialized yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - ForceEstimator has not been initialized yet.");
     }
 
     if (num_contacts_ == 0) {
-        throw std::runtime_error("Error - number of contacts has not been set yet.");
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
 
     if (is_on_ground_.size() == 0) {
-        throw std::runtime_error("Error - ground contact has not been set.");
+        throw std::runtime_error("[ForceEstimator]: Error - ground contact has not been set.");
     }
 
     int num_forces = 0;
