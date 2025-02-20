@@ -29,11 +29,17 @@ class MomentumObserver {
         void updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation);
 
         void enableTimeScaling(double expected_dt, double threshold);
-        void disableTimeScaling();
-
-        Eigen::VectorXd subtractFrictionTorque(Eigen::VectorXd torques);
+        void disableTimeScaling();        
 
         std::tuple<Eigen::VectorXd, Eigen::VectorXd> getResiduals(double dt);
+
+        //GETTERS
+        Eigen::MatrixXd getF() { return F; };
+        Eigen::MatrixXd getIC() { return IC; };
+
+    private: 
+
+        Eigen::VectorXd subtractFrictionTorque(Eigen::VectorXd torques);
 
 
 
