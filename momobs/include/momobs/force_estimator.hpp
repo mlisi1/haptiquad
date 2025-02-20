@@ -28,6 +28,8 @@ class ForceEstimator {
         std::vector<Eigen::VectorXd> calculateForces(Eigen::VectorXd r_int, Eigen::VectorXd r_ext, Eigen::Quaterniond orientation);
         void setNumContacts(int num_contacts);
 
+        std::vector<std::string> getFeetFrames();
+
 
     private:
 

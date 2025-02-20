@@ -76,6 +76,25 @@ void momobs::ForceEstimator::setFeetFrames(std::vector<std::string> feet_frames)
 }
 
 
+std::vector<std::string>momobs::ForceEstimator::getFeetFrames() {
+
+    if (!initialized) {
+        throw std::runtime_error("[ForceEstimator]: Error - ForceEstimator has not been initialized yet.");
+    }
+
+    if (num_contacts_ == 0) {
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
+    }
+
+    if (feet_frames_.size() == 0) {
+        throw std::runtime_error("[ForceEstimator]: Error - getFeetFrames(): feet frames has not been specified yet.");
+    }
+
+    return feet_frames_;
+
+}
+
+
 
 void momobs::ForceEstimator::setFeetOnGround(std::map<std::string, bool> is_on_ground) {
 
