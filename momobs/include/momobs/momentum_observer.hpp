@@ -22,7 +22,7 @@ class MomentumObserver {
 
         void initModel(pinocchio::Model pin_model);
 
-        void setInteralGain(float k_int);
+        void setInternalGain(float k_int);
         void setExternalGain(float k_ext);
 
         void updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques);

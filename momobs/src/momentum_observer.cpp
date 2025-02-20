@@ -2,7 +2,7 @@
 
 momobs::MomentumObserver::MomentumObserver() {}
 
-void momobs::MomentumObserver::setInteralGain(float k_int) {
+void momobs::MomentumObserver::setInternalGain(float k_int) {
 
     //Throw error
     if (!initialized) {

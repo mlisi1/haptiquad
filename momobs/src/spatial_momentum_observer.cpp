@@ -1,7 +1,7 @@
 #include <momobs/spatial_momentum_observer.hpp>
 
 
-void spatial::momobs::MomentumObserver::setInteralGain(float k_int) {
+void spatial::momobs::MomentumObserver::setInternalGain(float k_int) {
 
     if (!initialized) {
         throw std::runtime_error("[MomentumObserver]: Error - MomentumObserver has not been initialized yet.");
