@@ -126,7 +126,7 @@ void momobs::ForceEstimator::updateJacobians(JointStateDict q, Eigen::MatrixXd F
     }
 
 
-    Eigen::VectorXd q_ = Eigen::VectorXd::Zero(model.nv);
+    Eigen::VectorXd q_ = Eigen::VectorXd::Zero(model.nq);
     q_(6) = 1.0;
 
     for (int i=0; i<q.size(); i++) {
