@@ -37,6 +37,9 @@ void momobs::MomentumObserver::initModel(pinocchio::Model pin_model) {
     q_dot_ = Eigen::VectorXd::Zero(model.nv);
     torques_ = Eigen::VectorXd::Zero(model.nv-6);
 
+    frictionState = Eigen::VectorXd::Zero(model.nv-6);
+    frictionTorque = Eigen::VectorXd::Zero(model.nv-6);
+
     integral_int = Eigen::VectorXd::Zero(model.nv-6);
     r_int = Eigen::VectorXd::Zero(model.nv -6);
         
@@ -143,7 +146,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResidu
     H_dot_fb = H_dot - F_dot.transpose() * IC.inverse() * F - F.transpose() * IC.inverse() * F_dot
                             - F.transpose() * (-IC.inverse() * IC_dot * IC.inverse()) * F;
 
-    torques_ = subtractFrictionTorque(torques_);
+    torques_ = subtractFrictionTorque(torques_, dt);
 
     if (dt > threshold_) {
         scale_factor = expected_dt_ / dt;
@@ -177,9 +180,43 @@ void momobs::MomentumObserver::enableTimeScaling(double expected_dt, double thre
 }
 
 
-Eigen::VectorXd momobs::MomentumObserver::subtractFrictionTorque(Eigen::VectorXd torques) {
 
-    //TODO: implement friction model
-    
-    return torques;
+void momobs::MomentumObserver::setFrictionParameters(bool use_friction, double Fs, double Fc, double sigma_0,
+                                                        double sigma_1, double sigma_2, double alpha_) {
+
+    friction = use_friction;
+    F_s = Fs;
+    F_c = Fc;
+    sigma0 = sigma_0;
+    sigma1 = sigma_1;
+    sigma2 = sigma_2;
+    alpha = alpha_;
+
+}
+
+
+Eigen::VectorXd momobs::MomentumObserver::subtractFrictionTorque(Eigen::VectorXd torques, double dt) {
+
+    if (!friction) {
+        return torques;
+    }  
+
+    if (dt > threshold_) {
+        scale_factor = expected_dt_ / dt;
+    }
+
+    if (!rescale) { scale_factor = 1.0; }
+
+    for (int i=0; i<model.nv-6; i++) {
+
+        double qdot = q_dot_(i+6);
+        double s = F_c + (F_s - F_c) * std::exp(-alpha * std::abs(qdot));
+        double z_dot = qdot - (sigma0 * std::abs(qdot) / s) * frictionState[i];
+        frictionState[i] += dt * z_dot * scale_factor;
+        frictionTorque[i] = sigma1 * z_dot + sigma0 * frictionState[i] + sigma2 * qdot;
+
+    }
+
+    return torques - frictionTorque;
+
 }

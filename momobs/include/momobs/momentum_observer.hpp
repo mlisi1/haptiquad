@@ -33,13 +33,16 @@ class MomentumObserver {
 
         std::tuple<Eigen::VectorXd, Eigen::VectorXd> getResiduals(double dt);
 
+        void setFrictionParameters(bool use_friction, double Fs, double Fc, double sigma_0,
+                                    double sigma_1, double sigma_2, double alpha_);
+
         //GETTERS
         Eigen::MatrixXd getF() { return F; };
         Eigen::MatrixXd getIC() { return IC; };
 
     private: 
 
-        Eigen::VectorXd subtractFrictionTorque(Eigen::VectorXd torques);
+        Eigen::VectorXd subtractFrictionTorque(Eigen::VectorXd torques, double dt);
 
 
 
@@ -74,6 +77,16 @@ class MomentumObserver {
         double expected_dt_ = 0.0;
         double threshold_ = 0.0;     
 
+        //Friction
+        bool friction = false;
+        Eigen::VectorXd frictionTorque;
+        Eigen::VectorXd frictionState;
+        double F_s    = 0.0;    // Static (stiction) friction torque [Nm]
+        double F_c    = 0.0;    // Coulomb (dynamic) friction torque [Nm]
+        double sigma0 = 0.0; // Stiffness coefficient [Nm/rad]
+        double sigma1 = 0.0;  // Damping coefficient [Nm·s/rad]
+        double sigma2 = 0.0;    // Viscous friction coefficient [Nm·s/rad]
+        double alpha  = 0.0;    // Transition parameter [s/rad]
 
 
 
