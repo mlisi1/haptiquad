@@ -27,9 +27,7 @@ void momobs::ForceEstimator::setNumContacts(int num_contacts) {
     J.resize(num_contacts);
     J_fb.resize(num_contacts);
     J_lin.resize(num_contacts);
-    J_ang.resize(num_contacts);
-    F_.resize(num_contacts);
-    
+    J_ang.resize(num_contacts);    
 
 }
 
@@ -173,7 +171,7 @@ void momobs::ForceEstimator::updateJacobians(JointStateDict q, Eigen::MatrixXd F
 
 
 
-std::vector<Eigen::VectorXd> momobs::ForceEstimator::calculateForces(Eigen::VectorXd r_int, Eigen::VectorXd r_ext, Eigen::Quaterniond orientation) {
+std::map<std::string, Eigen::VectorXd> momobs::ForceEstimator::calculateForces(Eigen::VectorXd r_int, Eigen::VectorXd r_ext, Eigen::Quaterniond orientation) {
 
     if (!initialized) {
         throw std::runtime_error("[ForceEstimator]: Error - ForceEstimator has not been initialized yet.");
@@ -195,11 +193,12 @@ std::vector<Eigen::VectorXd> momobs::ForceEstimator::calculateForces(Eigen::Vect
         }
     }
 
+    orientation_ = orientation;
 
     if (num_forces == 0) {
 
         for (int i=0; i<num_contacts_; i++) {
-            F_[i] = Eigen::VectorXd::Zero(6);
+            F_[feet_frames_[i]] = Eigen::VectorXd::Zero(6);
         }
         return F_;
     }
@@ -240,20 +239,62 @@ std::vector<Eigen::VectorXd> momobs::ForceEstimator::calculateForces(Eigen::Vect
 
     for (int i=0; i<num_contacts_; i++) {
 
-        F_[i] = Eigen::VectorXd::Zero(6);
+        F_[feet_frames_[i]] = Eigen::VectorXd::Zero(6);
 
         if (!is_on_ground_[i]) {
             off+=1;
             continue;            
         } else {
-            F_[i].head<3>() = forces.segment(3*(i-off), 3);
+            F_[feet_frames_[i]].head<3>() = forces.segment(3*(i-off), 3);
 
             if (include_torques) {
-                F_[i].tail<3>() = torques.segment(3*(i-off), 3);
+                F_[feet_frames_[i]].tail<3>() = torques.segment(3*(i-off), 3);
             }
         }
     }
 
     return F_;
+
+}
+
+
+
+
+std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::ForceEstimator::calculateResidualsFromForces(std::map<std::string, Eigen::VectorXd> forces) {
+
+    if (!initialized) {
+        throw std::runtime_error("[ForceEstimator]: Error - ForceEstimator has not been initialized yet.");
+    }
+
+    if (num_contacts_ == 0) {
+        throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
+    }
+
+    if (num_contacts_ != forces.size()) {
+        throw std::runtime_error("[ForceEstimator]: Error - calculateResidualsFromForces(): number of forces (" + std::to_string(forces.size()) + ") is inconsistent with the number of contacts (" + std::to_string(num_contacts_) + ").");
+    }
+
+    if (forces[feet_frames_[0]].size() != 6) {
+        throw std::runtime_error("[ForceEstimator]: Error - calculateResidualsFromForces(): the forces are supposed to be spatial, with a dimension of 6.");
+    }
+
+    Eigen::VectorXd ext_r = Eigen::VectorXd::Zero(6);
+    Eigen::VectorXd int_r = Eigen::VectorXd::Zero(model.nv-6);
+
+    for (int i=0; i<num_contacts_; i++) {
+
+        if (forces.find(feet_frames_[i]) == forces.end()) {
+            throw std::runtime_error("[ForceEstimator]: Error - missing force data for " + feet_frames_[i]);
+        }
+
+        ext_r.head<3>() += orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].head<3>();
+        ext_r.tail<3>() += orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].tail<3>();
+
+        int_r += J_lin[i].transpose() * orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].head<3>();
+        int_r += J_ang[i].transpose() * orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].tail<3>();
+
+    }
+
+    return std::make_tuple(int_r, ext_r);
 
 }

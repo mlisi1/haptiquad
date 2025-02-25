@@ -25,7 +25,8 @@ class ForceEstimator {
         void findFeetFrames(std::vector<std::string> joint_names);
         void setFeetFrames(std::vector<std::string> feet_frames);
         void updateJacobians(JointStateDict q, Eigen::MatrixXd F, Eigen::MatrixXd IC);
-        std::vector<Eigen::VectorXd> calculateForces(Eigen::VectorXd r_int, Eigen::VectorXd r_ext, Eigen::Quaterniond orientation);
+        std::map<std::string, Eigen::VectorXd> calculateForces(Eigen::VectorXd r_int, Eigen::VectorXd r_ext, Eigen::Quaterniond orientation);
+        std::tuple<Eigen::VectorXd, Eigen::VectorXd> calculateResidualsFromForces(std::map<std::string, Eigen::VectorXd> forces);
         void setNumContacts(int num_contacts);
 
         std::vector<std::string> getFeetFrames();
@@ -39,6 +40,8 @@ class ForceEstimator {
         pinocchio::Model model;
         pinocchio::Data data;
 
+        Eigen::Quaterniond orientation_;
+
         std::vector<Eigen::MatrixXd> J;
         std::vector<Eigen::MatrixXd> J_fb;
         std::vector<Eigen::MatrixXd> J_lin, J_ang;
@@ -49,7 +52,7 @@ class ForceEstimator {
 
         std::vector<bool> is_on_ground_;
 
-        std::vector<Eigen::VectorXd> F_;
+        std::map<std::string, Eigen::VectorXd> F_;
 
         Eigen::MatrixXd to_pinv_lin, to_pinv_ang;
         Eigen::VectorXd r_lin, r_ang;
