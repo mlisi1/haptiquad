@@ -213,6 +213,8 @@ std::map<std::string, Eigen::VectorXd> momobs::ForceEstimator::calculateForces(E
     r_lin.tail(model.nv-6) = r_int;
     r_ang.tail(model.nv-6) = r_int;
 
+    Eigen::MatrixXd orient_inv = orientation_.toRotationMatrix().transpose();
+
 
     int off = 0;
 
@@ -223,11 +225,11 @@ std::map<std::string, Eigen::VectorXd> momobs::ForceEstimator::calculateForces(E
             continue;
         } else {
 
-            to_pinv_lin.block(0, (3*(i-off)), 3,3) = orientation.toRotationMatrix().transpose();
-            to_pinv_lin.block(3, (3*(i-off)), model.nv-6, 3) = J_lin[i].transpose() * orientation.toRotationMatrix().transpose();
+            to_pinv_lin.block(0, (3*(i-off)), 3,3) = orient_inv;
+            to_pinv_lin.block(3, (3*(i-off)), model.nv-6, 3) = J_lin[i].transpose() * orient_inv;
 
-            to_pinv_ang.block(0, (3*(i-off)), 3,3) = orientation.toRotationMatrix().transpose();
-            to_pinv_ang.block(3, (3*(i-off)), model.nv-6, 3) = J_ang[i].transpose() * orientation.toRotationMatrix().transpose();
+            to_pinv_ang.block(0, (3*(i-off)), 3,3) = orient_inv;
+            to_pinv_ang.block(3, (3*(i-off)), model.nv-6, 3) = J_ang[i].transpose() * orient_inv;
 
         }
     }
@@ -281,17 +283,19 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::ForceEstimator::calculateRe
     Eigen::VectorXd ext_r = Eigen::VectorXd::Zero(6);
     Eigen::VectorXd int_r = Eigen::VectorXd::Zero(model.nv-6);
 
+    Eigen::MatrixXd orient_inv = orientation_.toRotationMatrix().transpose();
+
     for (int i=0; i<num_contacts_; i++) {
 
         if (forces.find(feet_frames_[i]) == forces.end()) {
             throw std::runtime_error("[ForceEstimator]: Error - missing force data for " + feet_frames_[i]);
         }
 
-        ext_r.head<3>() += orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].head<3>();
-        ext_r.tail<3>() += orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].tail<3>();
+        ext_r.head<3>() += orient_inv * forces[feet_frames_[i]].head<3>();
+        ext_r.tail<3>() += orient_inv * forces[feet_frames_[i]].tail<3>();
 
-        int_r += J_lin[i].transpose() * orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].head<3>();
-        int_r += J_ang[i].transpose() * orientation_.toRotationMatrix().transpose() * forces[feet_frames_[i]].tail<3>();
+        int_r += J_lin[i].transpose() * orient_inv * forces[feet_frames_[i]].head<3>();
+        int_r += J_ang[i].transpose() * orient_inv * forces[feet_frames_[i]].tail<3>();
 
     }
 

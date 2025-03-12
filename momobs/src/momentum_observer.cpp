@@ -121,8 +121,8 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResidu
         throw std::runtime_error("[MomentumObserver]: Error - MomentumObserver has not been initialized yet.");
     }
 
-    //TODO: lighten computating functions
-    pinocchio::computeAllTerms(model, data, q_, q_dot_);
+    pinocchio::crba(model, data, q_);
+    pinocchio::nonLinearEffects(model, data, q_, q_dot_);
     pinocchio::computeCoriolisMatrix(model, data, q_, q_dot_);
 
     data.M.triangularView<Eigen::StrictlyLower>() = data.M.transpose().triangularView<Eigen::StrictlyLower>();
@@ -140,10 +140,13 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResidu
     F_dot = pin_H_dot.block(0, 6, 6, model.nv-6);
     IC_dot = pin_H_dot.block(0, 0, 6, 6);
 
-    C_fb = C - F.transpose() * IC.inverse() * p0c;
-    H_fb = H - F.transpose() * IC.inverse() * F;
-    H_dot_fb = H_dot - F_dot.transpose() * IC.inverse() * F - F.transpose() * IC.inverse() * F_dot
-                            - F.transpose() * (-IC.inverse() * IC_dot * IC.inverse()) * F;
+    Eigen::MatrixXd IC_inv = IC.inverse();
+    Eigen::MatrixXd F_t = F.transpose();
+
+    C_fb = C - F_t * IC_inv * p0c;
+    H_fb = H - F_t * IC_inv * F;
+    H_dot_fb = H_dot - F_dot.transpose() * IC_inv * F - F_t * IC_inv * F_dot
+                            - F_t * (-IC_inv * IC_dot * IC_inv) * F;
 
     torques_ = subtractFrictionTorque(torques_, q_dot_);
 
