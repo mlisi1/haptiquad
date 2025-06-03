@@ -1,3 +1,0 @@
-[submodule "pinocchio_spatial_lib"]
-	path = pinocchio_spatial_lib
-	url = git@github.com:mlisi1/pinocchio_spatial_lib.git

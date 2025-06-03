@@ -9,7 +9,6 @@ endif()
 set(DEPS
   pinocchio
   Eigen3
-  pinocchio_spatial_lib
 )
 
 # find dependencies
@@ -25,7 +24,6 @@ endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   src/momentum_observer.cpp
-  src/spatial_momentum_observer.cpp
   src/force_estimator.cpp
 )
 
