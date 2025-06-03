@@ -11,7 +11,7 @@
 using JointStateDict = std::map<std::string, double>;
 
 
-namespace momobs {
+namespace haptiquad {
 
 class MomentumObserver {
 

@@ -1,8 +1,8 @@
-#include <momobs/momentum_observer.hpp>
+#include <haptiquad/momentum_observer.hpp>
 
-momobs::MomentumObserver::MomentumObserver() {}
+haptiquad::MomentumObserver::MomentumObserver() {}
 
-void momobs::MomentumObserver::setInternalGain(float k_int) {
+void haptiquad::MomentumObserver::setInternalGain(float k_int) {
 
     //Throw error
     if (!initialized) {
@@ -15,7 +15,7 @@ void momobs::MomentumObserver::setInternalGain(float k_int) {
 
 
 
-void momobs::MomentumObserver::setExternalGain(float k_ext) {
+void haptiquad::MomentumObserver::setExternalGain(float k_ext) {
 
     if (!initialized) {
         throw std::runtime_error("[MomentumObserver]: Error - MomentumObserver has not been initialized yet.");
@@ -27,7 +27,7 @@ void momobs::MomentumObserver::setExternalGain(float k_ext) {
 
 
 
-void momobs::MomentumObserver::initModel(pinocchio::Model pin_model) {
+void haptiquad::MomentumObserver::initModel(pinocchio::Model pin_model) {
 
     model = pin_model;
     data = pinocchio::Data(model);
@@ -67,7 +67,7 @@ void momobs::MomentumObserver::initModel(pinocchio::Model pin_model) {
 
 
 
-void momobs::MomentumObserver::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
+void haptiquad::MomentumObserver::updateJointStates(JointStateDict q, JointStateDict q_dot, JointStateDict torques) {
 
     if (!initialized) {
         throw std::runtime_error("[MomentumObserver]: Error - MomentumObserver has not been initialized yet.");
@@ -95,7 +95,7 @@ void momobs::MomentumObserver::updateJointStates(JointStateDict q, JointStateDic
 
 
 
-void momobs::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
+void haptiquad::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quaterniond orientation) {
 
     if (!initialized) {
         throw std::runtime_error("[MomentumObserver]: Error - MomentumObserver has not been initialized yet.");
@@ -115,7 +115,7 @@ void momobs::MomentumObserver::updateBaseState(Eigen::VectorXd v0, Eigen::Quater
 }
 
 
-std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResiduals(double dt) {
+std::tuple<Eigen::VectorXd, Eigen::VectorXd> haptiquad::MomentumObserver::getResiduals(double dt) {
 
     if (!initialized) {
         throw std::runtime_error("[MomentumObserver]: Error - MomentumObserver has not been initialized yet.");
@@ -169,11 +169,11 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> momobs::MomentumObserver::getResidu
 }
 
 
-void momobs::MomentumObserver::disableTimeScaling() {
+void haptiquad::MomentumObserver::disableTimeScaling() {
     rescale = false;
 }
 
-void momobs::MomentumObserver::enableTimeScaling(double expected_dt, double threshold) {
+void haptiquad::MomentumObserver::enableTimeScaling(double expected_dt, double threshold) {
 
     rescale = true;
     expected_dt_ = expected_dt;
@@ -183,7 +183,7 @@ void momobs::MomentumObserver::enableTimeScaling(double expected_dt, double thre
 
 
 
-void momobs::MomentumObserver::setFrictionParameters(bool use_friction, double Fs, double Fc) {
+void haptiquad::MomentumObserver::setFrictionParameters(bool use_friction, double Fs, double Fc) {
 
     friction = use_friction;
     F_s = Fs;
@@ -197,7 +197,7 @@ int sgn(double val) {
 }
 
 
-Eigen::VectorXd momobs::MomentumObserver::subtractFrictionTorque(Eigen::VectorXd torques, Eigen::VectorXd q_dot) {
+Eigen::VectorXd haptiquad::MomentumObserver::subtractFrictionTorque(Eigen::VectorXd torques, Eigen::VectorXd q_dot) {
 
     if (!friction) {
         return torques;

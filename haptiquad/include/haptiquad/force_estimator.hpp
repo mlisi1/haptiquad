@@ -10,7 +10,7 @@
 
 using JointStateDict = std::map<std::string, double>;
 
-namespace momobs
+namespace haptiquad
 {
 
 class ForceEstimator {
@@ -61,4 +61,4 @@ class ForceEstimator {
 
 };
     
-} // namespace momobs
+} // namespace haptiquad

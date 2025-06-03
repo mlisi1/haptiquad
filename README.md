@@ -1,17 +1,17 @@
-# momobs
+# HaptiQuad
 ## Description
-momobs is a C++ library implementing the work done in the paper [Residual-based contacts estimation for humanoid robots](https://ieeexplore.ieee.org/document/7803308). 
+HaptiQuad is a C++ library implementing the work done in the paper [Residual-based contacts estimation for humanoid robots](https://ieeexplore.ieee.org/document/7803308). 
 The purpose of this library is to produce residuals calculations and provide a way to estimate external forces based on those residuals.
 The main change in the theory behind it is that, differently from the paper, this library does not expects a F/T sensor, thus estimating ground reaction forces.\\
-It can be used with any floating base model, as long as all the informations are in the correct format. An example of its usage, as well as its ROS2 wrapper can be foound in [momobs_ros2](https://github.com/mlisi1/momobs_ros2/tree/main).
+It can be used with any floating base model, as long as all the informations are in the correct format. An example of its usage, as well as its ROS2 wrapper can be foound in [haptiquad_ros2](https://github.com/mlisi1/haptiquad_ros2/tree/main).
 The library is mostly based on [Pinocchio](https://github.com/stack-of-tasks/pinocchio) and [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page).
 
 ## Installation
 To install the library, the [`colcon`](https://colcon.readthedocs.io/en/released/) building tool is necessary, as the library is mostly thought to be used along ROS2, however it is also possible to use it as a standard library.
 ```bash
 mkdir src && cd src
-git clone git@github.com:mlisi1/momobs.git
-cd momobs
+git clone git@github.com:mlisi1/haptiquad.git
+cd haptiquad
 git submodule init --recursive
 cd ../..
 colcon build
