@@ -44,13 +44,13 @@ class ForceEstimator {
 
         Eigen::Quaterniond orientation_;
 
-        std::vector<Eigen::MatrixXd> J, J_fb;
+        std::vector<Eigen::MatrixXd> J, J_fb, J_fb_lin;
         // std::vector<Eigen::MatrixXd> J_fb, J_full_fb, J_w_fb, J_w_full_fb;
         Eigen::MatrixXd J_w, J_w_fb;
         // std::vector<Eigen::MatrixXd> J_lin, J_ang;
 
         std::vector<std::string> feet_frames_;
-        std::string base_frame;
+        std::string base_frame = "";
 
         size_t num_contacts_ = 0;
 

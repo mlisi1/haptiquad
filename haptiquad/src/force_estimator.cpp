@@ -37,11 +37,7 @@ void haptiquad::ForceEstimator::initModel(pinocchio::Model pin_model) {
     model = pin_model;
     data = pinocchio::Data(model);
 
-    // r_lin = Eigen::VectorXd::Zero(model.nv-3);
-    // r_ang = Eigen::VectorXd::Zero(model.nv-3);
     r = Eigen::VectorXd::Zero(model.nv);
-    base_frame = "";
-
     initialized = true;
 
 }
@@ -72,6 +68,7 @@ void haptiquad::ForceEstimator::setNumContacts(int num_contacts) {
 
     J.resize(num_contacts);
     J_fb.resize(num_contacts);   
+    J_fb_lin.resize(num_contacts);
 
 }
 
@@ -138,32 +135,6 @@ std::vector<std::string>haptiquad::ForceEstimator::getFeetFrames() {
 
 
 
-// void haptiquad::ForceEstimator::setFeetOnGround(std::map<std::string, bool> is_on_ground) {
-
-//     if (num_contacts_ == 0) {
-//         throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
-//     }
-
-//     if (feet_frames_.size() == 0) {
-//         throw std::runtime_error("[ForceEstimator]: Error - setFeetOnGround(): feet frames has not been specified yet.");
-//     }
-
-//     if (feet_frames_.size() != is_on_ground.size()) {
-//         throw std::runtime_error("[ForceEstimator]: Error - setFeetOnGround(): argument size and feet frames size do not match.");
-//     }
-
-//     is_on_ground_.resize(num_contacts_);
-
-//     for (int i=0; i<num_contacts_; i++) {
-//         is_on_ground_[i] = is_on_ground[feet_frames_[i]];
-//     }
-
-// }
-
-
-
-
-
 void haptiquad::ForceEstimator::updateJacobians(JointStateDict q, Eigen::MatrixXd F, Eigen::MatrixXd IC) {
 
     if (!initialized) {
@@ -211,6 +182,7 @@ void haptiquad::ForceEstimator::updateJacobians(JointStateDict q, Eigen::MatrixX
         J_fb[i] = J[i];
         J[i] = J[i].block(0,6, 6, model.nv-6);
         J_fb[i].block(0,6, 6, model.nv-6) = (J[i].transpose() - F.transpose() * IC.inverse()).transpose();
+        J_fb_lin[i] = J_fb[i].block(0, 0, 3, model.nv);
         
     }
 
@@ -234,66 +206,22 @@ std::map<std::string, Eigen::VectorXd> haptiquad::ForceEstimator::calculateForce
         throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
 
-    // if (is_on_ground_.size() == 0) {
-    //     throw std::runtime_error("[ForceEstimator]: Error - ground contact has not been set.");
-    // }
-
-    // int num_forces = 0;
-    // for (int i=0; i<num_contacts_; i++) {
-    //     if (!is_on_ground_[i]) {
-    //     } else {
-    //         num_forces += 1;
-    //     }
-    // }
-
     orientation_ = orientation;
 
-    // if (num_forces == 0) {
+    for (size_t i=0; i<num_contacts_; i++) {
+        F_[feet_frames_[i]] = Eigen::VectorXd::Zero(6);
+    }
+    F_[base_frame] = Eigen::VectorXd::Zero(6);
 
-    //     for (int i=0; i<num_contacts_; i++) {
-    //         F_[feet_frames_[i]] = Eigen::VectorXd::Zero(6);
-    //     }
-    //     return F_;
-    // }
-
-
-    // to_pinv_lin = Eigen::MatrixXd::Zero(model.nv-3, 3*num_forces);
-    // to_pinv_ang = Eigen::MatrixXd::Zero(model.nv-3, 3*num_forces);
-    
-
-    // r_lin.head<3>() = r_ext.head<3>();
-    // r_ang.head<3>() = r_ext.tail<3>();
-
-    // r_lin.tail(model.nv-6) = r_int;
-    // r_ang.tail(model.nv-6) = r_int;
     r.head<6>() = r_ext;
     r.tail(model.nv-6) = r_int;
 
     Eigen::MatrixXd orient_inv = orientation_.toRotationMatrix().transpose();
     Eigen::MatrixXd spatial_orient_inv = spatialTransform(orient_inv, Eigen::Vector3d::Zero());
 
-    
-    // int off = 0;
-
-    // for (int i=0; i<num_contacts_; i++) {
-
-    //     if (!is_on_ground_[i]) {
-    //         off++;
-    //         continue;
-    //     } else {
-
-    //         to_pinv_lin.block(0, (3*(i-off)), 3,3) = orient_inv;
-    //         to_pinv_lin.block(3, (3*(i-off)), model.nv-6, 3) = J_lin[i].transpose() * orient_inv;
-
-    //         to_pinv_ang.block(0, (3*(i-off)), 3,3) = orient_inv;
-    //         to_pinv_ang.block(3, (3*(i-off)), model.nv-6, 3) = J_ang[i].transpose() * orient_inv;
-
-    //     }
-    // }
-
     for (size_t i=0; i<num_contacts_; i++) {
 
-        to_pinv.block(0, (3*i), model.nv, 3) = J_fb[i].transpose() * orient_inv;
+        to_pinv.block(0, (3*i), model.nv, 3) = J_fb_lin[i].transpose() * orient_inv;
 
     }
 
@@ -309,26 +237,7 @@ std::map<std::string, Eigen::VectorXd> haptiquad::ForceEstimator::calculateForce
         forces = to_pinv.inverse() * r;
 
     }
-    // Eigen::VectorXd forces = to_pinv_lin.completeOrthogonalDecomposition().pseudoInverse() * r_lin;
-    // Eigen::VectorXd torques = to_pinv_ang.completeOrthogonalDecomposition().pseudoInverse() * r_ang;
 
-    // off = 0;
-
-    // for (int i=0; i<num_contacts_; i++) {
-
-    //     F_[feet_frames_[i]] = Eigen::VectorXd::Zero(6);
-
-    //     if (!is_on_ground_[i]) {
-    //         off+=1;
-    //         continue;            
-    //     } else {
-    //         F_[feet_frames_[i]].head<3>() = forces.segment(3*(i-off), 3);
-
-    //         if (include_torques) {
-    //             F_[feet_frames_[i]].tail<3>() = torques.segment(3*(i-off), 3);
-    //         }
-    //     }
-    // }
     for (size_t i=0; i<num_contacts_; i++) {
         F_[feet_frames_[i]].head<3>() = forces.segment(3*i, 3);
     }
@@ -353,7 +262,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> haptiquad::ForceEstimator::calculat
         throw std::runtime_error("[ForceEstimator]: Error - number of contacts has not been set yet.");
     }
 
-    if (num_contacts_ != forces.size()) {
+    if (num_contacts_ != forces.size() - 1) {
         throw std::runtime_error("[ForceEstimator]: Error - calculateResidualsFromForces(): number of forces (" + std::to_string(forces.size()) + ") is inconsistent with the number of contacts (" + std::to_string(num_contacts_) + ").");
     }
 
@@ -363,7 +272,7 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> haptiquad::ForceEstimator::calculat
 
     Eigen::VectorXd ext_r = Eigen::VectorXd::Zero(6);
     Eigen::VectorXd int_r = Eigen::VectorXd::Zero(model.nv-6);
-
+    Eigen::VectorXd gt_r = Eigen::VectorXd::Zero(model.nv);
     Eigen::MatrixXd orient_inv = orientation_.toRotationMatrix().transpose();
 
     for (size_t i=0; i<num_contacts_; i++) {
@@ -372,18 +281,14 @@ std::tuple<Eigen::VectorXd, Eigen::VectorXd> haptiquad::ForceEstimator::calculat
             throw std::runtime_error("[ForceEstimator]: Error - missing force data for " + feet_frames_[i]);
         }
 
-        ext_r.head<3>() += orient_inv * forces[feet_frames_[i]].head<3>();
-        ext_r.tail<3>() += orient_inv * forces[feet_frames_[i]].tail<3>();
-
-        int_r += J_fb[i].transpose() * orient_inv * forces[feet_frames_[i]].head<3>();
-        // int_r += J_lin[i].transpose() * orient_inv * forces[feet_frames_[i]].head<3>();
-        // int_r += J_ang[i].transpose() * orient_inv * forces[feet_frames_[i]].tail<3>();
+        gt_r += J_fb_lin[i].transpose() * orient_inv * forces[feet_frames_[i]].head<3>();
 
     }
 
-    ext_r.head<3>() += orient_inv * forces["base_wrench"].head<3>();
-    ext_r.tail<3>() += orient_inv * forces["base_wrench"].tail<3>();
-    int_r += J_w_fb.transpose() * orient_inv * forces["base_wrench"];
+    gt_r += J_w_fb.transpose() * spatialTransform(orient_inv, Eigen::Vector3d::Zero()) * forces["base_wrench"];
+
+    int_r = gt_r.tail(model.nv-6);
+    ext_r = gt_r.head<6>();
 
     return std::make_tuple(int_r, ext_r);
 
