@@ -82,7 +82,7 @@ void haptiquad::MomentumObserver::updateJointStates(JointStateDict q, JointState
 
     //TODO: Check for matching names in the map
 
-    for (int i=0; i<q.size(); i++) {
+    for (size_t i=0; i<q.size(); i++) {
 
         q_(i+7) = q[model.names[i+2]];
         q_dot_(i+6) = q_dot[model.names[i+2]];
